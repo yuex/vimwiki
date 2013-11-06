@@ -341,26 +341,28 @@ function! s:CR(normal, just_mrkr) "{{{
 endfunction "}}}
 
 " List mappings
-inoremap <buffer> <CR> <Esc>:VimwikiListLineBreak 1 5<CR>
-inoremap <buffer> <S-CR> <Esc>:VimwikiListLineBreak 2 2<CR>
-nnoremap <silent> <buffer> o :call vimwiki#lst#kbd_o()<CR>
-nnoremap <silent> <buffer> O :call vimwiki#lst#kbd_O()<CR>
-map <silent> <buffer> glh :VimwikiListDecreaseLvl 0<CR>
-map <silent> <buffer> gll :VimwikiListIncreaseLvl 0<CR>
-map <silent> <buffer> gLh :VimwikiListDecreaseLvl 1<CR>
-map <silent> <buffer> gLl :VimwikiListIncreaseLvl 1<CR>
-map <silent> <buffer> gLH glH
-map <silent> <buffer> gLL gLl
-inoremap <buffer> <C-D> <C-O>:VimwikiListDecreaseLvl 0<CR>
-inoremap <buffer> <C-T> <C-O>:VimwikiListIncreaseLvl 0<CR>
-inoremap <buffer> <C-L><C-J> <C-O>:VimwikiListChangeMarker next i<CR>
-inoremap <buffer> <C-L><C-K> <C-O>:VimwikiListChangeMarker prev i<CR>
-nmap <silent> <buffer> glr :call vimwiki#lst#adjust_numbered_list()<CR>
-nmap <silent> <buffer> gLr :call vimwiki#lst#adjust_whole_buffer()<CR>
-nmap <silent> <buffer> gLR gLr
-noremap <silent> <buffer> gl<Space> :VimwikiListRemoveCB<CR>
-map <silent> <buffer> gL<Space> :call vimwiki#lst#remove_cb_in_list()<CR>
-inoremap <silent> <buffer> <C-L><C-M> <Esc>:call vimwiki#lst#toggle_list_item()<CR>
+if g:vimwiki_list_mappings
+  inoremap <buffer> <CR> <Esc>:VimwikiListLineBreak 1 5<CR>
+  inoremap <buffer> <S-CR> <Esc>:VimwikiListLineBreak 2 2<CR>
+  nnoremap <silent> <buffer> o :call vimwiki#lst#kbd_o()<CR>
+  nnoremap <silent> <buffer> O :call vimwiki#lst#kbd_O()<CR>
+  map <silent> <buffer> glh :VimwikiListDecreaseLvl 0<CR>
+  map <silent> <buffer> gll :VimwikiListIncreaseLvl 0<CR>
+  map <silent> <buffer> gLh :VimwikiListDecreaseLvl 1<CR>
+  map <silent> <buffer> gLl :VimwikiListIncreaseLvl 1<CR>
+  map <silent> <buffer> gLH glH
+  map <silent> <buffer> gLL gLl
+  inoremap <buffer> <C-D> <C-O>:VimwikiListDecreaseLvl 0<CR>
+  inoremap <buffer> <C-T> <C-O>:VimwikiListIncreaseLvl 0<CR>
+  inoremap <buffer> <C-L><C-J> <C-O>:VimwikiListChangeMarker next i<CR>
+  inoremap <buffer> <C-L><C-K> <C-O>:VimwikiListChangeMarker prev i<CR>
+  nmap <silent> <buffer> glr :call vimwiki#lst#adjust_numbered_list()<CR>
+  nmap <silent> <buffer> gLr :call vimwiki#lst#adjust_whole_buffer()<CR>
+  nmap <silent> <buffer> gLR gLr
+  noremap <silent> <buffer> gl<Space> :VimwikiListRemoveCB<CR>
+  map <silent> <buffer> gL<Space> :call vimwiki#lst#remove_cb_in_list()<CR>
+  inoremap <silent> <buffer> <C-L><C-M> <Esc>:call vimwiki#lst#toggle_list_item()<CR>
+endif
 
 for s:k in keys(g:vimwiki_bullet_types)
   let s:char = (s:k == '•' ? '.' : s:k)
@@ -420,28 +422,31 @@ vnoremap <silent><buffer> al :<C-U>call vimwiki#lst#TO_list_item(0, 1)<CR>
 
 onoremap <silent><buffer> il :<C-U>call vimwiki#lst#TO_list_item(1, 0)<CR>
 vnoremap <silent><buffer> il :<C-U>call vimwiki#lst#TO_list_item(1, 1)<CR>
+"}}}
 
-if !hasmapto('<Plug>VimwikiAddHeaderLevel')
-  nmap <silent><buffer> = <Plug>VimwikiAddHeaderLevel
+" Header {{{
+if g:vimwiki_header_mode == 0
+
+  if !hasmapto('<Plug>VimwikiAddHeaderLevel')
+    nmap <silent><buffer> = <Plug>VimwikiAddHeaderLevel
+  endif
+  nnoremap <silent><buffer> <Plug>VimwikiAddHeaderLevel :
+        \<C-U>call vimwiki#base#AddHeaderLevel()<CR>
+
+  if !hasmapto('<Plug>VimwikiRemoveHeaderLevel')
+    nmap <silent><buffer> - <Plug>VimwikiRemoveHeaderLevel
+  endif
+  nnoremap <silent><buffer> <Plug>VimwikiRemoveHeaderLevel :
+        \<C-U>call vimwiki#base#RemoveHeaderLevel()<CR>
+
+elseif g:vimwiki_header_mode == 1
+  if !hasmapto('<Plug>VimwikiHeaderLeader')
+    map <silent><buffer> = <Plug>VimwikiHeaderLeader
+  endif
+
+  noremap <silent><buffer> <Plug>VimwikiHeaderLeader :<C-U>call vimwiki#base#HeaderWrapper()<CR>
+
 endif
-nnoremap <silent><buffer> <Plug>VimwikiAddHeaderLevel :
-      \<C-U>call vimwiki#base#AddHeaderLevel()<CR>
-
-if !hasmapto('<Plug>VimwikiRemoveHeaderLevel')
-  nmap <silent><buffer> - <Plug>VimwikiRemoveHeaderLevel
-endif
-nnoremap <silent><buffer> <Plug>VimwikiRemoveHeaderLevel :
-      \<C-U>call vimwiki#base#RemoveHeaderLevel()<CR>
-
-nnoremap ]c :<C-U>call vimwiki#base#GotoHeader(0)<CR>
-nnoremap ]u :<C-U>call vimwiki#base#GotoHeader(-1, -1)<CR>
-nnoremap [c :<C-U>call vimwiki#base#GotoHeader(0)<CR>
-nnoremap [u :<C-U>call vimwiki#base#GotoHeader(-1, -1)<CR>
-nnoremap ]] :<C-U>call vimwiki#base#GotoHeader(+1)<CR>
-nnoremap [[ :<C-U>call vimwiki#base#GotoHeader(-1)<CR>
-nnoremap ]= :<C-U>call vimwiki#base#GotoHeader(+1, 0)<CR>
-nnoremap [= :<C-U>call vimwiki#base#GotoHeader(-1, 0)<CR>
-
 " }}}
 
 " KEYBINDINGS }}}

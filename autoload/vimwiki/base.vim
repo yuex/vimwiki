@@ -1365,113 +1365,161 @@ endfunction "}}}
 " HEADER functions {{{
 " vimwiki#base#AddHeaderLevel
 function! vimwiki#base#AddHeaderLevel() "{{{
-  let lnum = line('.')
-  let line = getline(lnum)
-  let rxHdr = g:vimwiki_rxH
-  if line =~ '^\s*$'
-    return
-  endif
+let lnum = line('.')
+let line = getline(lnum)
+let rxHdr = g:vimwiki_rxH
+if line =~ '^\s*$'
+  return
+endif
 
-  if line =~ g:vimwiki_rxHeader
-    let level = vimwiki#u#count_first_sym(line)
-    if level < 6
-      if g:vimwiki_symH
-        let line = substitute(line, '\('.rxHdr.'\+\).\+\1', rxHdr.'&'.rxHdr, '')
-      else
-        let line = substitute(line, '\('.rxHdr.'\+\).\+', rxHdr.'&', '')
-      endif
-      call setline(lnum, line)
-    endif
-  else
-    let line = substitute(line, '^\s*', '&'.rxHdr.' ', '') 
+if line =~ g:vimwiki_rxHeader
+  let level = vimwiki#u#count_first_sym(line)
+  if level < 6
     if g:vimwiki_symH
-      let line = substitute(line, '\s*$', ' '.rxHdr.'&', '')
+      let line = substitute(line, '\('.rxHdr.'\+\).\+\1', rxHdr.'&'.rxHdr, '')
+    else
+      let line = substitute(line, '\('.rxHdr.'\+\).\+', rxHdr.'&', '')
     endif
     call setline(lnum, line)
   endif
+else
+  let line = substitute(line, '^\s*', '&'.rxHdr.' ', '') 
+  if g:vimwiki_symH
+    let line = substitute(line, '\s*$', ' '.rxHdr.'&', '')
+  endif
+  call setline(lnum, line)
+endif
 endfunction "}}}
 
 " vimwiki#base#RemoveHeaderLevel
 function! vimwiki#base#RemoveHeaderLevel() "{{{
-  let lnum = line('.')
-  let line = getline(lnum)
-  let rxHdr = g:vimwiki_rxH
-  if line =~ '^\s*$'
-    return
+let lnum = line('.')
+let line = getline(lnum)
+let rxHdr = g:vimwiki_rxH
+if line =~ '^\s*$'
+  return
+endif
+
+if line =~ g:vimwiki_rxHeader
+  let level = vimwiki#u#count_first_sym(line)
+  let old = repeat(rxHdr, level)
+  let new = repeat(rxHdr, level - 1)
+
+  let chomp = line =~ rxHdr.'\s'
+
+  if g:vimwiki_symH
+    let line = substitute(line, old, new, 'g')
+  else
+    let line = substitute(line, old, new, '')
   endif
 
-  if line =~ g:vimwiki_rxHeader
-    let level = vimwiki#u#count_first_sym(line)
-    let old = repeat(rxHdr, level)
-    let new = repeat(rxHdr, level - 1)
-
-    let chomp = line =~ rxHdr.'\s'
-
-    if g:vimwiki_symH
-      let line = substitute(line, old, new, 'g')
-    else
-      let line = substitute(line, old, new, '')
-    endif
-
-    if level == 1 && chomp
-      let line = substitute(line, '^\s', '', 'g')
-      let line = substitute(line, '\s$', '', 'g')
-    endif
-
-    let line = substitute(line, '\s*$', '', '')
-
-    call setline(lnum, line)
+  if level == 1 && chomp
+    let line = substitute(line, '^\s', '', 'g')
+    let line = substitute(line, '\s$', '', 'g')
   endif
+
+  let line = substitute(line, '\s*$', '', '')
+
+  call setline(lnum, line)
+endif
 endfunction " }}}
 
 " vimwiki#base#GotoHeader
 function! vimwiki#base#GotoHeader(direction, ...) "{{{
-  let rxH = g:vimwiki_rxH
+let rxH = g:vimwiki_rxH
 
-  if a:direction == 0
-    let match_cursor = 'bc'
-    let warning = 'outside any header'
-  elseif a:direction > 0
-    let match_cursor = ''
-    let warning = 'no next header'
-  elseif a:direction < 0
-    let match_cursor = 'b'
-    let warning = 'no previous header'
+if a:direction == 0
+  let match_cursor = 'bc'
+  let warning = 'outside any header'
+elseif a:direction > 0
+  let match_cursor = ''
+  let warning = 'no next header'
+elseif a:direction < 0
+  let match_cursor = 'b'
+  let warning = 'no previous header'
+endif
+
+if a:0 > 0
+  let lnum = search('^\('.rxH.'\+\).\+\1\=\s*$', 'bcW')
+  let level = vimwiki#u#count_first_sym(getline(lnum))
+  if a:1 > 0
+    let level += 1
+  elseif a:1 < 0
+    let level -= 1
   endif
 
-  if a:0 > 0
-    let lnum = search('^\('.rxH.'\+\).\+\1\=\s*$', 'bcW')
-    let level = vimwiki#u#count_first_sym(getline(lnum))
-    if a:1 > 0
-      let level += 1
-    elseif a:1 < 0
-      let level -= 1
-    endif
-
-    if level <= 0
-      echo 'no upper header'
-      return
-    endif
-  endif
-
-  if exists('level')
-    let lnum = search('^\('.rxH.'\{1,'.level.'}\)[^'.rxH.']\+\1\=\s*$', 'nW'.match_cursor)
-
-    if lnum > 0 && vimwiki#u#count_first_sym(getline(lnum)) < level
-      let lnum = 0
-    endif
-  else
-    let lnum = search('^\('.rxH.'\+\).\+\1\=\s*$', 'nW'.match_cursor)
-  endif
-
-  if lnum == 0
-    echo warning
+  if level <= 0
+    echo 'no upper header'
     return
   endif
+endif
 
-  call cursor(lnum, 1)
+if exists('level')
+  let lnum = search('^\('.rxH.'\{1,'.level.'}\)[^'.rxH.']\+\1\=\s*$', 'nW'.match_cursor)
+
+  if lnum > 0 && vimwiki#u#count_first_sym(getline(lnum)) < level
+    let lnum = 0
+  endif
+else
+  let lnum = search('^\('.rxH.'\+\).\+\1\=\s*$', 'nW'.match_cursor)
+endif
+
+if lnum == 0
+  echo warning
   return
+endif
+
+call cursor(lnum, 1)
+return
 endfunction " }}}
+
+" vimwiki#base#HeaderWrapper
+function! vimwiki#base#HeaderWrapper()
+  let num = 0
+  while 1
+    if !exists('char')
+      let lnum = line('.')
+    endif
+    let char = nr2char(getchar())
+
+    "if exists('lastchar') && char != lastchar
+      "break
+    "endif
+
+    let num += 1
+    let lastchar = char
+    if char == ''
+      break
+    elseif char == '='
+      call vimwiki#base#AddHeaderLevel()
+    elseif char == '-'
+      call vimwiki#base#RemoveHeaderLevel()
+    elseif char == 'c'
+      " go current header
+      call vimwiki#base#GotoHeader( 0)
+    elseif char == 'u'
+      " go upper header
+      call vimwiki#base#GotoHeader(-1, -1)
+    elseif char == ']'
+      " go next header
+      echo num.' '.char
+      call vimwiki#base#GotoHeader(+1)
+      redraw
+    elseif char == '['
+      " go previous header
+      call vimwiki#base#GotoHeader(-1)
+    elseif char == '}'
+      " go next sibling header
+      call vimwiki#base#GotoHeader(+1, 0)
+    elseif char == '{'
+      " go previous sibling header
+      call vimwiki#base#GotoHeader(-1, 0)
+    else
+      break
+    endif
+    redraw!
+  endwhile
+endfunc
 "}}}
 
 " LINK functions {{{
